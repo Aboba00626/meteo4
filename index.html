@@ -141,7 +141,7 @@
             <div class="card-value" id="uv">--</div>
         </div>
 
-        <!-- Виджет карты НародМон с автозакрытием окна приветствия -->
+        <!-- Виджет карты НародМон -->
         <div class="card card-chart">
             <iframe id="monitor-widget" src="https://narodmon.ru" width="100%" height="100%" frameborder="0" style="border-radius: 8px;"></iframe>
         </div>
@@ -168,7 +168,7 @@
     const lon = "43.4966";
 
     function updateData() {
-        // Чтение датчиков с НародМон через CORS-прокси
+        // 1. ПОЛУЧЕНИЕ ДАННЫХ С НАРОДМОН
         const url = 'https://allorigins.win' + encodeURIComponent('https://narodmon.ru' + macID + '/data.json');
         
         fetch(url)
@@ -196,27 +196,31 @@
                 document.getElementById('status-text').style.color = "#94a3b8";
             });
 
-        // Запрос погоды с защитой от сбоев ИИ (без использования цифр в квадратных скобках)
+        // 2. БЕЗОПАСНЫЙ ЗАПРОС ПОГОДЫ НА 3 ДНЯ (БЕЗ СЛОЖНЫХ МАССИВОВ И ЦИКЛОВ)
         fetch("https://openweathermap.org" + lat + "&lon=" + lon + "&appid=" + apiKey + "&units=metric&lang=ru")
             .then(res => res.json())
             .then(data => {
-                if (data && data.list && data.list.length > 0) {
-                    // Создаем копию списка и вырезаем только нужные шаги на 3 дня
-                    let cleanList = data.list.slice();
+                if (data && data.list) {
+                    let d1 = null, d2 = null, d3 = null;
                     
-                    // Безопасно забираем элементы методами извлечения массива
-                    let step1 = cleanList.splice(8, 1).pop();  // Завтра
-                    let step2 = cleanList.splice(15, 1).pop(); // Послезавтра
-                    let step3 = cleanList.splice(22, 1).pop(); // 3-й день
+                    // Находим точки прогноза на 12:00 дня
+                    data.list.forEach(item => {
+                        if (item.dt_txt.indexOf("12:00:00") !== -1) {
+                            if (!d1) d1 = item;
+                            else if (!d2) d2 = item;
+                            else if (!d3) d3 = item;
+                        }
+                    });
 
-                    if (step1 && step1.weather) {
-                        document.getElementById('f-day1').innerHTML = Math.round(step1.main.temp) + " °C<br>" + step1.weather.shift().description;
+                    // Выводим данные, аккуратно читая массив weather
+                    if (d1 && d1.weather && d1.weather[0]) {
+                        document.getElementById('f-day1').innerHTML = Math.round(d1.main.temp) + " °C<br>" + d1.weather[0].description;
                     }
-                    if (step2 && step2.weather) {
-                        document.getElementById('f-day2').innerHTML = Math.round(step2.main.temp) + " °C<br>" + step2.weather.shift().description;
+                    if (d2 && d2.weather && d2.weather[0]) {
+                        document.getElementById('f-day2').innerHTML = Math.round(d2.main.temp) + " °C<br>" + d2.weather[0].description;
                     }
-                    if (step3 && step3.weather) {
-                        document.getElementById('f-day3').innerHTML = Math.round(step3.main.temp) + " °C<br>" + step3.weather.shift().description;
+                    if (d3 && d3.weather && d3.weather[0]) {
+                        document.getElementById('f-day3').innerHTML = Math.round(d3.main.temp) + " °C<br>" + d3.weather[0].description;
                     }
                 }
             })
