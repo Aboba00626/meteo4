@@ -69,13 +69,6 @@
         .card-air { border: 2px solid #a855f7; }     
         .card-uv { border: 2px solid #84cc16; }      
         
-        .card-rain { 
-            border: 2px solid #94a3b8; 
-            grid-column: 3;
-            grid-row: 1 / span 2;
-            min-height: 240px;
-        }
-
         .card-chart { 
             border: 2px solid #334155; 
             grid-column: 1 / span 3; 
@@ -97,7 +90,6 @@
 
         @media (max-width: 768px) {
             .grid-container { grid-template-columns: 1fr; }
-            .card-rain { grid-column: auto; grid-row: auto; min-height: auto; }
             .card-chart { grid-column: auto; }
         }
     </style>
@@ -120,17 +112,12 @@
             <div class="card-value" id="pressure">-- мм рт.ст.</div>
         </div>
 
-        <div class="card card-rain">
-            <div class="card-title">⚪ Датчик осадков (YL-83)</div>
-            <div class="card-value" id="rain" style="font-size: 20px; margin-top: 15px;">Ожидание капель...</div>
-        </div>
-
-        <!-- ВТОРОЙ РЯД ДАТЧИКОВ -->
         <div class="card card-hum">
             <div class="card-title">🟡 Влажность (BME280)</div>
             <div class="card-value" id="humidity">-- %</div>
         </div>
 
+        <!-- ВТОРОЙ РЯД ДАТЧИКОВ -->
         <div class="card card-air">
             <div class="card-title">🟣 Воздух (MQ135)</div>
             <div class="card-value" id="air">--</div>
@@ -141,9 +128,9 @@
             <div class="card-value" id="uv">--</div>
         </div>
 
-        <!-- Виджет карты НародМон -->
+        <!-- Виджет карты НародМон с автозакрытием окна приветствия -->
         <div class="card card-chart">
-        <iframe id="monitor-widget" src="https://narodmon.ru" width="100%" height="100%" frameborder="0" style="border-radius: 8px;"></iframe>
+            <iframe id="monitor-widget" src="https://narodmon.ru" width="100%" height="100%" frameborder="0" style="border-radius: 8px;"></iframe>
         </div>
 
         <!-- Синие блоки прогноза -->
@@ -163,13 +150,13 @@
 
 <script>
     const macID = "68094753D1A8"; 
+    const apiKey = "aa6c5267c1d84f5534839291f30532a5";
     const lat = "44.1776";
     const lon = "43.5040";
-    // Твой добытый личный ключ
     const vcKey = "4F2G5ALVYEAC83LVYK2NTC7MP"; 
 
     function updateData() {
-        // 1. ПОЛУЧЕНИЕ ДАННЫХ ДАТЧИКОВ С НАРОДМОН ЧЕРЕЗ CORS-ПРОКСИ
+        // 1. ПОЛУЧЕНИЕ ДАННЫХ ДАТЧИКОВ С НАРОДМОН ЧЕРЕЗ CORS-ПРОКСИ С ПРОВЕРКОЙ ОНЛАЙНА Платы
         const url = 'https://allorigins.win' + encodeURIComponent('https://narodmon.ru' + macID + '/data.json');
         
         fetch(url)
@@ -177,6 +164,22 @@
             .then(wrapper => {
                 const data = JSON.parse(wrapper.contents);
                 if (data && data.sensors) {
+                    
+                    // Проверяем время последнего пакета от ESP32
+                    const lastPacketTime = data.time * 1000; 
+                    const currentTime = Date.now();
+                    const tenMinutes = 10 * 60 * 1000; 
+
+                    if (currentTime - lastPacketTime > tenMinutes) {
+                        // Если плата молчит дольше 10 минут
+                        document.getElementById('status-text').innerText = "Плата отключена от сети (Нет связи)";
+                        document.getElementById('status-text').style.color = "#ef4444";
+                    } else {
+                        // Если плата слала данные недавно
+                        document.getElementById('status-text').innerText = "Станция онлайн. Данные обновлены.";
+                        document.getElementById('status-text').style.color = "#4ade80";
+                    }
+
                     data.sensors.forEach(s => {
                         const code = s.id.toUpperCase();
                         if (code === 'T1') document.getElementById('temp').innerText = s.value + ' °C';
@@ -184,12 +187,7 @@
                         if (code === 'P1') document.getElementById('pressure').innerText = s.value + ' мм рт.ст.';
                         if (code === 'UV') document.getElementById('uv').innerText = s.value;
                         if (code === 'AIR') document.getElementById('air').innerText = s.value;
-                        if (code === 'RAIN') {
-                            document.getElementById('rain').innerText = s.value < 3000 ? "🌧️ Идет дождь!" : "☀️ Сухо";
-                        }
                     });
-                    document.getElementById('status-text').innerText = "Станция онлайн. Данные обновлены.";
-                    document.getElementById('status-text').style.color = "#4ade80";
                 }
             })
             .catch(() => {
@@ -198,7 +196,7 @@
             });
 
         // 2. ЗАПРОС ПОГОДЫ С ТВОИМ КЛЮЧОМ (БЕЗ СБОЙНЫХ МАССИВОВ И ИНДЕКСОВ)
-        const vcUrl = 'https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/' + lat + ',' + lon + '?unitGroup=metric&include=days&key=' + vcKey + '&contentType=json&lang=ru';
+        const vcUrl = 'https://visualcrossing.com' + lat + ',' + lon + '?unitGroup=metric&include=days&key=' + vcKey + '&contentType=json&lang=ru';
 
         fetch(vcUrl)
             .then(res => res.json())
@@ -206,7 +204,6 @@
                 if (data && data.days) {
                     let counter = 1;
                     data.days.forEach(day => {
-                        // Текущий день пропускаем, берем только следующие 3 дня
                         if (counter > 1 && counter <= 4) {
                             let blockId = "f-day" + (counter - 1);
                             let element = document.getElementById(blockId);
