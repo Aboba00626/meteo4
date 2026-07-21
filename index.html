@@ -31,7 +31,6 @@
             text-align: center;
         }
 
-        /* Твоя оригинальная сетка блоков */
         .grid-container {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -47,7 +46,7 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify(content: center);
             min-height: 100px;
         }
 
@@ -118,7 +117,7 @@
         
         <div class="card card-press">
             <div class="card-title">🟠 Давление (BME280)</div>
-            <div class="card-value" id="pressure">-- мм рт.st.</div>
+            <div class="card-value" id="pressure">-- мм рт.ст.</div>
         </div>
 
         <div class="card card-rain">
@@ -142,12 +141,12 @@
             <div class="card-value" id="uv">--</div>
         </div>
 
-        <!-- Твой оригинальный виджет карты -->
+        <!-- Виджет карты НародМон -->
         <div class="card card-chart">
             <iframe id="monitor-widget" src="https://narodmon.ru" width="100%" height="100%" frameborder="0" style="border-radius: 8px;"></iframe>
         </div>
 
-        <!-- Твои оригинальные синие блоки прогноза -->
+        <!-- Синие блоки прогноза -->
         <div class="card card-forecast">
             <div class="forecast-day">Завтра</div>
             <div id="f-day1">-- °C<br>Загрузка...</div>
@@ -169,10 +168,13 @@
     const lon = "43.4966";
 
     function updateData() {
-        // Чтение датчиков с НародМон
-        fetch(`https://narodmon.ru{macID}/data.json`)
+        // Чтение датчиков с НародМон через CORS-прокси (чтобы работало везде)
+        const url = 'https://allorigins.win' + encodeURIComponent('https://narodmon.ru' + macID + '/data.json');
+        
+        fetch(url)
             .then(res => res.json())
-            .then(data => {
+            .then(wrapper => {
+                const data = JSON.parse(wrapper.contents);
                 if (data && data.sensors) {
                     data.sensors.forEach(s => {
                         const code = s.id.toUpperCase();
@@ -190,36 +192,37 @@
                 }
             })
             .catch(() => {
-                document.getElementById('status-text').innerText = "Плата подключена к сети. Ожидание свежих данных...";
+                document.getElementById('status-text').innerText = "Плата в сети. Ожидание свежих данных от датчиков...";
                 document.getElementById('status-text').style.color = "#94a3b8";
             });
 
-        // Прямой интернет-прогноз без прокси (на GitHub Pages заработает идеально)
+        // Запрос погоды без капризных числовых индексов (работает через перебор массива)
         fetch(`https://openweathermap.org{lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=ru`)
             .then(res => res.json())
             .then(data => {
                 if (data && data.list) {
-                    // Используем текстовые ключи, чтобы ИИ не вырезал индексы
-                    const day1 = data.list["8"];  // Завтра
-                    const day2 = data.list["16"]; // Послезавтра
-                    const day3 = data.list["24"]; // 3-й день
-
-                    if (day1 && day1.weather && day1.weather["0"]) {
-                        document.getElementById('f-day1').innerHTML = Math.round(day1.main.temp) + ' °C<br>' + day1.weather["0"].description;
-                    }
-                    if (day2 && day2.weather && day2.weather["0"]) {
-                        document.getElementById('f-day2').innerHTML = Math.round(day2.main.temp) + ' °C<br>' + day2.weather["0"].description;
-                    }
-                    if (day3 && day3.weather && day3.weather["0"]) {
-                        document.getElementById('f-day3').innerHTML = Math.round(day3.main.temp) + ' °C<br>' + day3.weather["0"].description;
+                    let dayCounter = 1;
+                    // Перебираем элементы шагов прогноза с шагом 8 (что равно 24 часам)
+                    for (let i = 8; i <= 24; i += 8) {
+                        const forecast = data.list[String(i)] || data.list[i];
+                        if (forecast && forecast.weather && forecast.weather[0]) {
+                            const temp = Math.round(forecast.main.temp);
+                            const desc = forecast.weather[0].description;
+                            const tempSign = temp > 0 ? "+" + temp : temp;
+                            
+                            const element = document.getElementById("f-day" + dayCounter);
+                            if (element) {
+                                element.innerHTML = tempSign + " °C<br>" + desc;
+                            }
+                            dayCounter++;
+                        }
                     }
                 }
             })
             .catch(() => {
-                // Пока открываешь локально на ПК — будет писать "Ошибка на ПК", на Гитхабе сразу включится погода!
-                document.getElementById('f-day1').innerText = "Ошибка на ПК (Включится на GitHub)";
-                document.getElementById('f-day2').innerText = "Ожидание GitHub...";
-                document.getElementById('f-day3').innerText = "Ожидание GitHub...";
+                document.getElementById('f-day1').innerText = "Ошибка загрузки";
+                document.getElementById('f-day2').innerText = "Ошибка загрузки";
+                document.getElementById('f-day3').innerText = "Ошибка загрузки";
             });
     }
 
