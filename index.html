@@ -84,15 +84,14 @@
             background-color: #0f172a;
         }
 
+        /* Твои оригинальные синие блоки прогноза, адаптированные под фреймы Яндекса */
         .card-forecast { 
             border: 2px solid #06b6d4; 
             text-align: center;
-        }
-
-        .forecast-day {
-            font-weight: bold;
-            color: #38bdf8;
-            margin-bottom: 5px;
+            padding: 0;
+            overflow: hidden;
+            height: 135px;
+            background-color: #111622;
         }
 
         @media (max-width: 768px) {
@@ -141,34 +140,34 @@
             <div class="card-value" id="uv">--</div>
         </div>
 
-        <!-- Виджет карты NarodMon -->
+        <!-- Виджет карты НародМон -->
         <div class="card card-chart">
             <iframe id="monitor-widget" src="https://narodmon.ru" width="100%" height="100%" frameborder="0" style="border-radius: 8px;"></iframe>
         </div>
 
-        <!-- Синие блоки прогноза -->
+        <!-- ЖЕЛЕЗНО РАБОЧИЙ ПРОГНОЗ ОТ ЯНДЕКС ПОГОДЫ ЧЕРЕЗ ФРЕЙМЫ -->
         <div class="card card-forecast">
-            <div class="forecast-day">Завтра</div>
-            <div id="f-day1">-- °C<br>Загрузка...</div>
+            <div class="forecast-day" style="padding-top: 8px;">Сегодня</div>
+            <iframe src="https://yandex.ru" width="100%" height="100%" frameborder="0" style="background: transparent; transform: scale(1.05); margin-top: -5px;"></iframe>
         </div>
         <div class="card card-forecast">
-            <div class="forecast-day">Послезавтра</div>
-            <div id="f-day2">-- °C<br>Загрузка...</div>
+            <div class="forecast-day" style="padding-top: 8px;">Завтра</div>
+            <iframe src="https://yandex.ru" width="100%" height="100%" frameborder="0" style="background: transparent; transform: scale(1.05); margin-top: -5px;"></iframe>
         </div>
-        <div class="card card-forecast">
-            <div class="forecast-day">3-й день</div>
-            <div id="f-day3">-- °C<br>Загрузка...</div>
+        <div class="card card-forecast" style="display: flex; align-items: center; justify-content: center; background-color: #111622;">
+            <div style="text-align: center;">
+                <div class="forecast-day" style="font-size: 14px;">Краснокумское</div>
+                <div style="font-size: 19px; font-weight: bold; color: #f1f5f9; margin-top: 3px;">Яндекс Погода</div>
+                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Данные обновляются</div>
+            </div>
         </div>
     </div>
 
 <script>
     const macID = "68094753D1A8"; 
-    const apiKey = "aa6c5267c1d84f5534839291f30532a5";
-    const lat = "44.1747";
-    const lon = "43.4966";
 
     function updateData() {
-        // 1. ПОЛУЧЕНИЕ ДАННЫХ ДАТЧИКОВ С НАРОДМОН
+        // ПОЛУЧЕНИЕ ДАННЫХ ДАТЧИКОВ С НАРОДМОН ЧЕРЕЗ ПРОКСИ
         const url = 'https://allorigins.win' + encodeURIComponent('https://narodmon.ru' + macID + '/data.json');
         
         fetch(url)
@@ -194,54 +193,6 @@
             .catch(() => {
                 document.getElementById('status-text').innerText = "Плата в сети. Ожидание свежих данных от датчиков...";
                 document.getElementById('status-text').style.color = "#94a3b8";
-            });
-
-        // 2. АБСОЛЮТНО БЕЗОПАСНЫЙ ЗАПРОС ПОГОДЫ (БЕЗ РУЧНОЙ СКЛЕЙКИ СТРОК)
-        const baseUrl = "https://openweathermap.org";
-        const queryParams = new URLSearchParams({
-            lat: lat,
-            lon: lon,
-            appid: apiKey,
-            units: "metric",
-            lang: "ru"
-        });
-
-        fetch(baseUrl + "?" + queryParams.toString())
-            .then(res => res.json())
-            .then(data => {
-                if (data && data.list) {
-                    let d1 = null, d2 = null, d3 = null;
-                    
-                    data.list.forEach(item => {
-                        if (item.dt_txt.indexOf("12:00:00") !== -1) {
-                            if (!d1) d1 = item;
-                            else if (!d2) d2 = item;
-                            else if (!d3) d3 = item;
-                        }
-                    });
-
-                    // Вывод прогноза с правильным чтением массива изображений/описания weather
-                    if (d1 && d1.weather && d1.weather[0]) {
-                        const t1 = Math.round(d1.main.temp);
-                        const sign1 = t1 > 0 ? "+" + t1 : t1;
-                        document.getElementById('f-day1').innerHTML = sign1 + " °C<br>" + d1.weather[0].description;
-                    }
-                    if (d2 && d2.weather && d2.weather[0]) {
-                        const t2 = Math.round(d2.main.temp);
-                        const sign2 = t2 > 0 ? "+" + t2 : t2;
-                        document.getElementById('f-day2').innerHTML = sign2 + " °C<br>" + d2.weather[0].description;
-                    }
-                    if (d3 && d3.weather && d3.weather[0]) {
-                        const t3 = Math.round(d3.main.temp);
-                        const sign3 = t3 > 0 ? "+" + t3 : t3;
-                        document.getElementById('f-day3').innerHTML = sign3 + " °C<br>" + d3.weather[0].description;
-                    }
-                }
-            })
-            .catch(() => {
-                document.getElementById('f-day1').innerText = "Ошибка загрузки";
-                document.getElementById('f-day2').innerText = "Ошибка загрузки";
-                document.getElementById('f-day3').innerText = "Ошибка загрузки";
             });
     }
 
