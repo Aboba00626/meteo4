@@ -112,29 +112,29 @@
     <div class="grid-container">
         <!-- ПЕРВЫЙ РЯД ДАТЧИКОВ -->
         <div class="card card-temp">
-            <div class="card-title">🔴 Температура (BME280)</div>
+            <div class="card-title">🔴 Температура </div>
             <div class="card-value" id="temp">-- °C</div>
         </div>
         
         <div class="card card-press">
-            <div class="card-title">🟠 Давление (BME280)</div>
+            <div class="card-title">🟠 Давление </div>
             <div class="card-value" id="pressure">-- мм рт.ст.</div>
         </div>
 
         <!-- ТВОЙ ОТДЕЛЬНЫЙ БЛОК ДОЖДЯ СНОВА НА МЕСТЕ -->
         <div class="card card-rain">
-            <div class="card-title">⚪ Датчик осадков (YL-83)</div>
+            <div class="card-title">⚪ Датчик осадков </div>
             <div class="card-value" id="rain" style="font-size: 20px; margin-top: 15px;">Ожидание...</div>
         </div>
 
         <!-- ВТОРОЙ РЯД ДАТЧИКОВ -->
         <div class="card card-hum">
-            <div class="card-title">🟡 Влажность (BME280)</div>
+            <div class="card-title">🟡 Влажность </div>
             <div class="card-value" id="humidity">-- %</div>
         </div>
 
         <div class="card card-air">
-            <div class="card-title">🟣 Воздух (MQ135)</div>
+            <div class="card-title">🟣 Воздух </div>
             <div class="card-value" id="air">--</div>
         </div>
 
@@ -208,7 +208,7 @@
                 }
             })
             .catch(() => {
-                document.getElementById('status-text').innerText = "Плата в сети. Ожидание свежих данных от датчиков...";
+                document.getElementById('status-text').innerText = "плата всегда в сети. Ожидание свежих данных от датчиков. если есть проблемы писать в тг @Aboba00626";
                 document.getElementById('status-text').style.color = "#94a3b8";
             });
     }
