@@ -104,23 +104,23 @@
     <div class="grid-container">
         <!-- ПЕРВЫЙ РЯД ДАТЧИКОВ -->
         <div class="card card-temp">
-            <div class="card-title">🔴 Температура (BME280)</div>
+            <div class="card-title">🔴 Температура </div>
             <div class="card-value" id="temp">-- °C</div>
         </div>
         
         <div class="card card-press">
-            <div class="card-title">🟠 Давление (BME280)</div>
+            <div class="card-title">🟠 Давление </div>
             <div class="card-value" id="pressure">-- мм рт.ст.</div>
         </div>
 
         <div class="card card-hum">
-            <div class="card-title">🟡 Влажность (BME280)</div>
+            <div class="card-title">🟡 Влажность </div>
             <div class="card-value" id="humidity">-- %</div>
         </div>
 
         <!-- ВТОРОЙ РЯД ДАТЧИКОВ -->
         <div class="card card-air">
-            <div class="card-title">🟣 Воздух (MQ135)</div>
+            <div class="card-title">🟣 Воздух </div>
             <div class="card-value" id="air">--</div>
         </div>
 
@@ -171,7 +171,7 @@
                 }
             })
             .catch(() => {
-                document.getElementById('status-text').innerText = "Плата в сети. Ожидание свежих данных от датчиков...";
+                document.getElementById('status-text').innerText = " Ожидание свежих данных от датчиков...";
                 document.getElementById('status-text').style.color = "#94a3b8";
             });
     }
