@@ -11,10 +11,174 @@
             font-family: 'Segoe UI', system-ui, sans-serif;
             margin: 0;
             padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #38bdf8;
+            margin-bottom: 5px;
+            font-size: 28px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        .status {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        /* Твоя оригинальная сетка блоков */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .card {
+            background-color: #1e293b;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 100px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            color: #94a3b8;
+        }
+
+        .card-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .card-temp { border: 2px solid #ef4444; }    
+        .card-hum { border: 2px solid #eab308; }     
+        .card-press { border: 2px solid #f97316; }   
+        .card-air { border: 2px solid #a855f7; }     
+        .card-uv { border: 2px solid #84cc16; }      
+
+        .card-chart { 
+            border: 2px solid #334155; 
+            grid-column: 1 / span 3; 
+            height: 250px;
+            padding: 10px;
+            background-color: #0f172a;
+        }
+
+        .card-forecast { 
+            border: 2px solid #06b6d4; 
+            text-align: center;
+        }
+
+        .forecast-day {
+            font-weight: bold;
+            color: #38bdf8;
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-container { grid-template-columns: 1fr; }
+            .card-chart { grid-column: auto; }
         }
     </style>
 </head>
 <body>
-    <!-- Видимое содержимое страницы -->
+
+    <h1>📡 Метеостанция село Краснокумское</h1>
+    <div style="color: #38bdf8; font-size: 16px; font-weight: bold; margin-bottom: 5px;">📍 ул. Лесная</div>
+    <div class="status" id="status-text">Связь со станцией: проверка пакетов...</div>
+
+    <div class="grid-container">
+        <!-- ПЕРВЫЙ РЯД ДАТЧИКОВ -->
+        <div class="card card-temp">
+            <div class="card-title">🔴 Температура (BME280)</div>
+            <div class="card-value" id="temp">-- °C</div>
+        </div>
+        
+        <div class="card card-press">
+            <div class="card-title">🟠 Давление (BME280)</div>
+            <div class="card-value" id="pressure">-- мм рт.ст.</div>
+        </div>
+
+        <div class="card card-hum">
+            <div class="card-title">🟡 Влажность (BME280)</div>
+            <div class="card-value" id="humidity">-- %</div>
+        </div>
+
+        <!-- ВТОРОЙ РЯД ДАТЧИКОВ -->
+        <div class="card card-air">
+            <div class="card-title">🟣 Воздух (MQ135)</div>
+            <div class="card-value" id="air">--</div>
+        </div>
+
+        <div class="card card-uv">
+            <div class="card-title">🟢 УФ-Индекс</div>
+            <div class="card-value" id="uv">--</div>
+        </div>
+
+        <!-- Компактный информер-график НародМон без лишних окон -->
+        <div class="card card-chart">
+            <iframe id="monitor-widget" src="https://narodmon.ru" width="100%" height="100%" frameborder="0" style="border-radius: 8px;"></iframe>
+        </div>
+
+        <!-- Твой оригинальный прогноз погоды -->
+        <div class="card card-forecast">
+            <div class="forecast-day">Завтра</div>
+            <div id="f-day1">+27 °C<br>🌤️ Ясно</div>
+        </div>
+        <div class="card card-forecast">
+            <div class="forecast-day">Послезавтра</div>
+            <div id="f-day2">+29 °C<br>☀️ Малооблачно</div>
+        </div>
+        <div class="card card-forecast">
+            <div class="forecast-day">3-й день</div>
+            <div id="f-day3">+28 °C<br>🌦️ Небольшой дождь</div>
+        </div>
+    </div>
+
+<script>
+    const macID = "68094753D1A8"; 
+
+    function updateData() {
+        // Твой оригинальный рабочий запрос данных датчиков
+        fetch('https://narodmon.ru' + macID + '/data.json')
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.sensors) {
+                    data.sensors.forEach(s => {
+                        const code = s.id.toUpperCase();
+                        if (code === 'T1') document.getElementById('temp').innerText = s.value + ' °C';
+                        if (code === 'H1') document.getElementById('humidity').innerText = s.value + ' %';
+                        if (code === 'P1') document.getElementById('pressure').innerText = s.value + ' мм рт.ст.';
+                        if (code === 'UV') document.getElementById('uv').innerText = s.value;
+                        if (code === 'AIR') document.getElementById('air').innerText = s.value;
+                    });
+                    document.getElementById('status-text').innerText = "Станция онлайн. Данные обновлены.";
+                    document.getElementById('status-text').style.color = "#4ade80";
+                }
+            })
+            .catch(() => {
+                document.getElementById('status-text').innerText = "Плата в сети. Ожидание свежих данных от датчиков...";
+                document.getElementById('status-text').style.color = "#94a3b8";
+            });
+    }
+
+    updateData();
+    setInterval(updateData, 30000);
+</script>
+
 </body>
 </html>
