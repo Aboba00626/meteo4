@@ -196,29 +196,32 @@
                 document.getElementById('status-text').style.color = "#94a3b8";
             });
 
-        // 2. ПОЛУЧЕНИЕ ИНТЕРНЕТ-ПРОГНОЗА ПОГОДЫ НА 3 ДНЯ
-        fetch("https://openweathermap.org" + lat + "&lon=" + lon + "&appid=" + apiKey + "&units=metric&lang=ru")
+        // 2. ИСПРАВЛЕННЫЙ ЗАПРОС ПОГОДЫ (ТОЧНЫЙ АДРЕС, БЕЗ СБОЕВ)
+        const weatherUrl = `https://openweathermap.org{lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=ru`;
+
+        fetch(weatherUrl)
             .then(res => res.json())
             .then(data => {
                 if (data && data.list) {
-                    let d1 = null, d2 = null, d3 = null;
-                    
-                    data.list.forEach(item => {
-                        if (item.dt_txt.indexOf("12:00:00") !== -1) {
-                            if (!d1) d1 = item;
-                            else if (!d2) d2 = item;
-                            else if (!d3) d3 = item;
-                        }
-                    });
+                    // Прямой выбор нужных шагов (8 — завтра, 16 — послезавтра, 24 — 3-й день)
+                    const day1 = data.list[8];
+                    const day2 = data.list[16];
+                    const day3 = data.list[24];
 
-                    if (d1) {
-                        document.getElementById('f-day1').innerHTML = Math.round(d1.main.temp) + " °C<br>" + d1.weather[0].description;
+                    if (day1 && day1.weather && day1.weather[0]) {
+                        const t1 = Math.round(day1.main.temp);
+                        const sign1 = t1 > 0 ? "+" + t1 : t1;
+                        document.getElementById('f-day1').innerHTML = sign1 + " °C<br>" + day1.weather[0].description;
                     }
-                    if (d2) {
-                        document.getElementById('f-day2').innerHTML = Math.round(d2.main.temp) + " °C<br>" + d2.weather[0].description;
+                    if (day2 && day2.weather && day2.weather[0]) {
+                        const t2 = Math.round(day2.main.temp);
+                        const sign2 = t2 > 0 ? "+" + t2 : t2;
+                        document.getElementById('f-day2').innerHTML = sign2 + " °C<br>" + day2.weather[0].description;
                     }
-                    if (d3) {
-                        document.getElementById('f-day3').innerHTML = Math.round(d3.main.temp) + " °C<br>" + d3.weather[0].description;
+                    if (day3 && day3.weather && day3.weather[0]) {
+                        const t3 = Math.round(day3.main.temp);
+                        const sign3 = t3 > 0 ? "+" + t3 : t3;
+                        document.getElementById('f-day3').innerHTML = sign3 + " °C<br>" + day3.weather[0].description;
                     }
                 }
             })
