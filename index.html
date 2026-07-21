@@ -203,7 +203,6 @@
                 if (data && data.list) {
                     let d1 = null, d2 = null, d3 = null;
                     
-                    // Фильтруем прогноз, выбирая только точки на 12:00 дня
                     data.list.forEach(item => {
                         if (item.dt_txt.indexOf("12:00:00") !== -1) {
                             if (!d1) d1 = item;
@@ -212,7 +211,6 @@
                         }
                     });
 
-                    // Вывод прогноза на экран
                     if (d1) {
                         document.getElementById('f-day1').innerHTML = Math.round(d1.main.temp) + " °C<br>" + d1.weather[0].description;
                     }
@@ -231,11 +229,8 @@
             });
     }
 
-    // Первый запуск и повтор каждые 30 секунд
     updateData();
     setInterval(updateData, 30000);
-</script>
-
 </script>
 </body>
 </html>
