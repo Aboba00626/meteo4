@@ -84,14 +84,15 @@
             background-color: #0f172a;
         }
 
-        /* Твои оригинальные синие блоки прогноза, адаптированные под фреймы Яндекса */
         .card-forecast { 
             border: 2px solid #06b6d4; 
             text-align: center;
-            padding: 0;
-            overflow: hidden;
-            height: 135px;
-            background-color: #111622;
+        }
+
+        .forecast-day {
+            font-weight: bold;
+            color: #38bdf8;
+            margin-bottom: 5px;
         }
 
         @media (max-width: 768px) {
@@ -108,7 +109,7 @@
     <div class="status" id="status-text">Связь со станцией: проверка пакетов...</div>
 
     <div class="grid-container">
-        <!-- ПЕРВЫЙ РЯД -->
+        <!-- ПЕРВЫЙ РЯД ДАТЧИКОВ -->
         <div class="card card-temp">
             <div class="card-title">🔴 Температура (BME280)</div>
             <div class="card-value" id="temp">-- °C</div>
@@ -124,7 +125,7 @@
             <div class="card-value" id="rain" style="font-size: 20px; margin-top: 15px;">Ожидание капель...</div>
         </div>
 
-        <!-- ВТОРОЙ РЯД -->
+        <!-- ВТОРОЙ РЯД ДАТЧИКОВ -->
         <div class="card card-hum">
             <div class="card-title">🟡 Влажность (BME280)</div>
             <div class="card-value" id="humidity">-- %</div>
@@ -145,29 +146,30 @@
             <iframe id="monitor-widget" src="https://narodmon.ru" width="100%" height="100%" frameborder="0" style="border-radius: 8px;"></iframe>
         </div>
 
-        <!-- ЖЕЛЕЗНО РАБОЧИЙ ПРОГНОЗ ОТ ЯНДЕКС ПОГОДЫ ЧЕРЕЗ ФРЕЙМЫ -->
+        <!-- Синие блоки прогноза -->
         <div class="card card-forecast">
-            <div class="forecast-day" style="padding-top: 8px;">Сегодня</div>
-            <iframe src="https://yandex.ru" width="100%" height="100%" frameborder="0" style="background: transparent; transform: scale(1.05); margin-top: -5px;"></iframe>
+            <div class="forecast-day">Завтра</div>
+            <div id="f-day1">-- °C<br>Загрузка...</div>
         </div>
         <div class="card card-forecast">
-            <div class="forecast-day" style="padding-top: 8px;">Завтра</div>
-            <iframe src="https://yandex.ru" width="100%" height="100%" frameborder="0" style="background: transparent; transform: scale(1.05); margin-top: -5px;"></iframe>
+            <div class="forecast-day">Послезавтра</div>
+            <div id="f-day2">-- °C<br>Загрузка...</div>
         </div>
-        <div class="card card-forecast" style="display: flex; align-items: center; justify-content: center; background-color: #111622;">
-            <div style="text-align: center;">
-                <div class="forecast-day" style="font-size: 14px;">Краснокумское</div>
-                <div style="font-size: 19px; font-weight: bold; color: #f1f5f9; margin-top: 3px;">Яндекс Погода</div>
-                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Данные обновляются</div>
-            </div>
+        <div class="card card-forecast">
+            <div class="forecast-day">3-й день</div>
+            <div id="f-day3">-- °C<br>Загрузка...</div>
         </div>
     </div>
 
 <script>
     const macID = "68094753D1A8"; 
+    const lat = "44.1776";
+    const lon = "43.5040";
+    // Твой добытый личный ключ
+    const vcKey = "4F2G5ALVYEAC83LVYK2NTC7MP"; 
 
     function updateData() {
-        // ПОЛУЧЕНИЕ ДАННЫХ ДАТЧИКОВ С НАРОДМОН ЧЕРЕЗ ПРОКСИ
+        // 1. ПОЛУЧЕНИЕ ДАННЫХ ДАТЧИКОВ С НАРОДМОН ЧЕРЕЗ CORS-ПРОКСИ
         const url = 'https://allorigins.win' + encodeURIComponent('https://narodmon.ru' + macID + '/data.json');
         
         fetch(url)
@@ -193,6 +195,35 @@
             .catch(() => {
                 document.getElementById('status-text').innerText = "Плата в сети. Ожидание свежих данных от датчиков...";
                 document.getElementById('status-text').style.color = "#94a3b8";
+            });
+
+        // 2. ЗАПРОС ПОГОДЫ С ТВОИМ КЛЮЧОМ (БЕЗ СБОЙНЫХ МАССИВОВ И ИНДЕКСОВ)
+        const vcUrl = 'https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/' + lat + ',' + lon + '?unitGroup=metric&include=days&key=' + vcKey + '&contentType=json&lang=ru';
+
+        fetch(vcUrl)
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.days) {
+                    let counter = 1;
+                    data.days.forEach(day => {
+                        // Текущий день пропускаем, берем только следующие 3 дня
+                        if (counter > 1 && counter <= 4) {
+                            let blockId = "f-day" + (counter - 1);
+                            let element = document.getElementById(blockId);
+                            if (element) {
+                                let t = Math.round(day.temp);
+                                let sign = t > 0 ? "+" + t : t;
+                                element.innerHTML = sign + " °C<br><small style='font-size:11px;color:#94a3b8;'>" + day.conditions + "</small>";
+                            }
+                        }
+                        counter++;
+                    });
+                }
+            })
+            .catch(() => {
+                document.getElementById('f-day1').innerText = "Ошибка сети";
+                document.getElementById('f-day2').innerText = "Ошибка сети";
+                document.getElementById('f-day3').innerText = "Ошибка сети";
             });
     }
 
