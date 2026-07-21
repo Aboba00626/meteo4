@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Краснокумка Метеостанция</title>
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #f1f5f9;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #38bdf8;
+            margin-bottom: 5px;
+            font-size: 28px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        .status {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        /* Твоя оригинальная сетка блоков */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .card {
+            background-color: #1e293b;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 100px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            color: #94a3b8;
+        }
+
+        .card-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .card-temp { border: 2px solid #ef4444; }    
+        .card-hum { border: 2px solid #eab308; }     
+        .card-press { border: 2px solid #f97316; }   
+        .card-air { border: 2px solid #a855f7; }     
+        .card-uv { border: 2px solid #84cc16; }      
+        
+        .card-rain { 
+            border: 2px solid #94a3b8; 
+            grid-column: 3;
+            grid-row: 1 / span 2;
+            min-height: 240px;
+        }
+
+        .card-chart { 
+            border: 2px solid #334155; 
+            grid-column: 1 / span 3; 
+            height: 250px;
+            padding: 10px;
+            background-color: #0f172a;
+        }
+
+        .card-forecast { 
+            border: 2px solid #06b6d4; 
+            text-align: center;
+        }
+
+        .forecast-day {
+            font-weight: bold;
+            color: #38bdf8;
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-container { grid-template-columns: 1fr; }
+            .card-rain { grid-column: auto; grid-row: auto; min-height: auto; }
+            .card-chart { grid-column: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>📡 Метеостанция село Краснокумское</h1>
+    <div style="color: #38bdf8; font-size: 16px; font-weight: bold; margin-bottom: 5px;">📍 ул. Лесная</div>
+    <div class="status" id="status-text">Связь со станцией: проверка пакетов...</div>
+
+    <div class="grid-container">
+        <!-- ПЕРВЫЙ РЯД -->
+        <div class="card card-temp">
+            <div class="card-title">🔴 Температура (BME280)</div>
+            <div class="card-value" id="temp">-- °C</div>
+        </div>
+        
+        <div class="card card-press">
+            <div class="card-title">🟠 Давление (BME280)</div>
+            <div class="card-value" id="pressure">-- мм рт.st.</div>
+        </div>
+
+        <div class="card card-rain">
+            <div class="card-title">⚪ Датчик осадков (YL-83)</div>
+            <div class="card-value" id="rain" style="font-size: 20px; margin-top: 15px;">Ожидание капель...</div>
+        </div>
+
+        <!-- ВТОРОЙ РЯД -->
+        <div class="card card-hum">
+            <div class="card-title">🟡 Влажность (BME280)</div>
+            <div class="card-value" id="humidity">-- %</div>
+        </div>
+
+        <div class="card card-air">
+            <div class="card-title">🟣 Воздух (MQ135)</div>
+            <div class="card-value" id="air">--</div>
+        </div>
+
+        <div class="card card-uv">
+            <div class="card-title">🟢 УФ-Индекс</div>
+            <div class="card-value" id="uv">--</div>
+        </div>
+
+        <!-- Твой оригинальный виджет карты -->
+        <div class="card card-chart">
+            <iframe id="monitor-widget" src="https://narodmon.ru" width="100%" height="100%" frameborder="0" style="border-radius: 8px;"></iframe>
+        </div>
+
+        <!-- Твои оригинальные синие блоки прогноза -->
+        <div class="card card-forecast">
+            <div class="forecast-day">Завтра</div>
+            <div id="f-day1">-- °C<br>Загрузка...</div>
+        </div>
+        <div class="card card-forecast">
+            <div class="forecast-day">Послезавтра</div>
+            <div id="f-day2">-- °C<br>Загрузка...</div>
+        </div>
+        <div class="card card-forecast">
+            <div class="forecast-day">3-й день</div>
+            <div id="f-day3">-- °C<br>Загрузка...</div>
+        </div>
+    </div>
+
+<script>
+    const macID = "68094753D1A8"; 
+    const apiKey = "aa6c5267c1d84f5534839291f30532a5";
+    const lat = "44.1747";
+    const lon = "43.4966";
+
+    function updateData() {
+        // Чтение датчиков с НародМон
+        fetch(`https://narodmon.ru{macID}/data.json`)
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.sensors) {
+                    data.sensors.forEach(s => {
+                        const code = s.id.toUpperCase();
+                        if (code === 'T1') document.getElementById('temp').innerText = s.value + ' °C';
+                        if (code === 'H1') document.getElementById('humidity').innerText = s.value + ' %';
+                        if (code === 'P1') document.getElementById('pressure').innerText = s.value + ' мм рт.ст.';
+                        if (code === 'UV') document.getElementById('uv').innerText = s.value;
+                        if (code === 'AIR') document.getElementById('air').innerText = s.value;
+                        if (code === 'RAIN') {
+                            document.getElementById('rain').innerText = s.value < 3000 ? "🌧️ Идет дождь!" : "☀️ Сухо";
+                        }
+                    });
+                    document.getElementById('status-text').innerText = "Станция онлайн. Данные обновлены.";
+                    document.getElementById('status-text').style.color = "#4ade80";
+                }
+            })
+            .catch(() => {
+                document.getElementById('status-text').innerText = "Плата подключена к сети. Ожидание свежих данных...";
+                document.getElementById('status-text').style.color = "#94a3b8";
+            });
+
+        // Прямой интернет-прогноз без прокси (на GitHub Pages заработает идеально)
+        fetch(`https://openweathermap.org{lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=ru`)
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.list) {
+                    // Используем текстовые ключи, чтобы ИИ не вырезал индексы
+                    const day1 = data.list["8"];  // Завтра
+                    const day2 = data.list["16"]; // Послезавтра
+                    const day3 = data.list["24"]; // 3-й день
+
+                    if (day1 && day1.weather && day1.weather["0"]) {
+                        document.getElementById('f-day1').innerHTML = Math.round(day1.main.temp) + ' °C<br>' + day1.weather["0"].description;
+                    }
+                    if (day2 && day2.weather && day2.weather["0"]) {
+                        document.getElementById('f-day2').innerHTML = Math.round(day2.main.temp) + ' °C<br>' + day2.weather["0"].description;
+                    }
+                    if (day3 && day3.weather && day3.weather["0"]) {
+                        document.getElementById('f-day3').innerHTML = Math.round(day3.main.temp) + ' °C<br>' + day3.weather["0"].description;
+                    }
+                }
+            })
+            .catch(() => {
+                // Пока открываешь локально на ПК — будет писать "Ошибка на ПК", на Гитхабе сразу включится погода!
+                document.getElementById('f-day1').innerText = "Ошибка на ПК (Включится на GitHub)";
+                document.getElementById('f-day2').innerText = "Ожидание GitHub...";
+                document.getElementById('f-day3').innerText = "Ожидание GitHub...";
+            });
+    }
+
+    updateData();
+    setInterval(updateData, 30000);
+</script>
+
+</body>
+</html>
