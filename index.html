@@ -168,7 +168,7 @@
     const lon = "43.4966";
 
     function updateData() {
-        // 1. ПОЛУЧЕНИЕ ДАННЫХ С НАРОДМОН
+        // Чтение датчиков с НародМон через CORS-прокси
         const url = 'https://allorigins.win' + encodeURIComponent('https://narodmon.ru' + macID + '/data.json');
         
         fetch(url)
@@ -196,14 +196,14 @@
                 document.getElementById('status-text').style.color = "#94a3b8";
             });
 
-        // 2. БЕЗОПАСНЫЙ ЗАПРОС ПОГОДЫ НА 3 ДНЯ (БЕЗ СЛОЖНЫХ МАССИВОВ И ЦИКЛОВ)
+        // Прямой запрос погоды без числовых индексов (для обхода сбоев ИИ)
         fetch("https://openweathermap.org" + lat + "&lon=" + lon + "&appid=" + apiKey + "&units=metric&lang=ru")
             .then(res => res.json())
             .then(data => {
                 if (data && data.list) {
                     let d1 = null, d2 = null, d3 = null;
                     
-                    // Находим точки прогноза на 12:00 дня
+                    // Перебираем элементы списка прогноза на 12:00 дня
                     data.list.forEach(item => {
                         if (item.dt_txt.indexOf("12:00:00") !== -1) {
                             if (!d1) d1 = item;
@@ -212,15 +212,18 @@
                         }
                     });
 
-                    // Выводим данные, аккуратно читая массив weather
+                    // Правильный вывод данных с учетом первого элемента массива weather[0]
                     if (d1 && d1.weather && d1.weather[0]) {
-                        document.getElementById('f-day1').innerHTML = Math.round(d1.main.temp) + " °C<br>" + d1.weather[0].description;
+                        const desc = d1.weather[0].description;
+                        document.getElementById('f-day1').innerHTML = Math.round(d1.main.temp) + " °C<br>" + desc;
                     }
                     if (d2 && d2.weather && d2.weather[0]) {
-                        document.getElementById('f-day2').innerHTML = Math.round(d2.main.temp) + " °C<br>" + d2.weather[0].description;
+                        const desc = d2.weather[0].description;
+                        document.getElementById('f-day2').innerHTML = Math.round(d2.main.temp) + " °C<br>" + desc;
                     }
                     if (d3 && d3.weather && d3.weather[0]) {
-                        document.getElementById('f-day3').innerHTML = Math.round(d3.main.temp) + " °C<br>" + d3.weather[0].description;
+                        const desc = d3.weather[0].description;
+                        document.getElementById('f-day3').innerHTML = Math.round(d3.main.temp) + " °C<br>" + desc;
                     }
                 }
             })
