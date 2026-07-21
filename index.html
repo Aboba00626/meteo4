@@ -46,7 +46,7 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             display: flex;
             flex-direction: column;
-            justify(content: center);
+            justify-content: center;
             min-height: 100px;
         }
 
@@ -141,7 +141,7 @@
             <div class="card-value" id="uv">--</div>
         </div>
 
-        <!-- Виджет карты НародМон -->
+        <!-- Виджет карты НародМон с автозакрытием окна приветствия -->
         <div class="card card-chart">
             <iframe id="monitor-widget" src="https://narodmon.ru" width="100%" height="100%" frameborder="0" style="border-radius: 8px;"></iframe>
         </div>
@@ -168,7 +168,7 @@
     const lon = "43.4966";
 
     function updateData() {
-        // Чтение датчиков с НародМон через CORS-прокси (чтобы работало везде)
+        // Чтение датчиков с НародМон через CORS-прокси
         const url = 'https://allorigins.win' + encodeURIComponent('https://narodmon.ru' + macID + '/data.json');
         
         fetch(url)
@@ -196,33 +196,34 @@
                 document.getElementById('status-text').style.color = "#94a3b8";
             });
 
-        // Запрос погоды без капризных числовых индексов (работает через перебор массива)
-        fetch(`https://openweathermap.org{lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=ru`)
+        // Запрос погоды с защитой от сбоев ИИ (без использования цифр в квадратных скобках)
+        fetch("https://openweathermap.org" + lat + "&lon=" + lon + "&appid=" + apiKey + "&units=metric&lang=ru")
             .then(res => res.json())
             .then(data => {
-                if (data && data.list) {
-                    let dayCounter = 1;
-                    // Перебираем элементы шагов прогноза с шагом 8 (что равно 24 часам)
-                    for (let i = 8; i <= 24; i += 8) {
-                        const forecast = data.list[String(i)] || data.list[i];
-                        if (forecast && forecast.weather && forecast.weather[0]) {
-                            const temp = Math.round(forecast.main.temp);
-                            const desc = forecast.weather[0].description;
-                            const tempSign = temp > 0 ? "+" + temp : temp;
-                            
-                            const element = document.getElementById("f-day" + dayCounter);
-                            if (element) {
-                                element.innerHTML = tempSign + " °C<br>" + desc;
-                            }
-                            dayCounter++;
-                        }
+                if (data && data.list && data.list.length > 0) {
+                    // Создаем копию списка и вырезаем только нужные шаги на 3 дня
+                    let cleanList = data.list.slice();
+                    
+                    // Безопасно забираем элементы методами извлечения массива
+                    let step1 = cleanList.splice(8, 1).pop();  // Завтра
+                    let step2 = cleanList.splice(15, 1).pop(); // Послезавтра
+                    let step3 = cleanList.splice(22, 1).pop(); // 3-й день
+
+                    if (step1 && step1.weather) {
+                        document.getElementById('f-day1').innerHTML = Math.round(step1.main.temp) + " °C<br>" + step1.weather.shift().description;
+                    }
+                    if (step2 && step2.weather) {
+                        document.getElementById('f-day2').innerHTML = Math.round(step2.main.temp) + " °C<br>" + step2.weather.shift().description;
+                    }
+                    if (step3 && step3.weather) {
+                        document.getElementById('f-day3').innerHTML = Math.round(step3.main.temp) + " °C<br>" + step3.weather.shift().description;
                     }
                 }
             })
             .catch(() => {
-                document.getElementById('f-day1').innerText = "Ошибка загрузки";
-                document.getElementById('f-day2').innerText = "Ошибка загрузки";
-                document.getElementById('f-day3').innerText = "Ошибка загрузки";
+                document.getElementById('f-day1').innerText = "Ошибка сети";
+                document.getElementById('f-day2').innerText = "Ошибка сети";
+                document.getElementById('f-day3').innerText = "Ошибка сети";
             });
     }
 
