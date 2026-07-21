@@ -141,7 +141,7 @@
             <div class="card-value" id="uv">--</div>
         </div>
 
-        <!-- Виджет карты НародМон -->
+        <!-- Виджет карты NarodMon -->
         <div class="card card-chart">
             <iframe id="monitor-widget" src="https://narodmon.ru" width="100%" height="100%" frameborder="0" style="border-radius: 8px;"></iframe>
         </div>
@@ -196,32 +196,45 @@
                 document.getElementById('status-text').style.color = "#94a3b8";
             });
 
-        // 2. ИСПРАВЛЕННЫЙ ЗАПРОС ПОГОДЫ (ТОЧНЫЙ АДРЕС, БЕЗ СБОЕВ)
-        const weatherUrl = `https://openweathermap.org{lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=ru`;
+        // 2. АБСОЛЮТНО БЕЗОПАСНЫЙ ЗАПРОС ПОГОДЫ (БЕЗ РУЧНОЙ СКЛЕЙКИ СТРОК)
+        const baseUrl = "https://openweathermap.org";
+        const queryParams = new URLSearchParams({
+            lat: lat,
+            lon: lon,
+            appid: apiKey,
+            units: "metric",
+            lang: "ru"
+        });
 
-        fetch(weatherUrl)
+        fetch(baseUrl + "?" + queryParams.toString())
             .then(res => res.json())
             .then(data => {
                 if (data && data.list) {
-                    // Прямой выбор нужных шагов (8 — завтра, 16 — послезавтра, 24 — 3-й день)
-                    const day1 = data.list[8];
-                    const day2 = data.list[16];
-                    const day3 = data.list[24];
+                    let d1 = null, d2 = null, d3 = null;
+                    
+                    data.list.forEach(item => {
+                        if (item.dt_txt.indexOf("12:00:00") !== -1) {
+                            if (!d1) d1 = item;
+                            else if (!d2) d2 = item;
+                            else if (!d3) d3 = item;
+                        }
+                    });
 
-                    if (day1 && day1.weather && day1.weather[0]) {
-                        const t1 = Math.round(day1.main.temp);
+                    // Вывод прогноза с правильным чтением массива изображений/описания weather
+                    if (d1 && d1.weather && d1.weather[0]) {
+                        const t1 = Math.round(d1.main.temp);
                         const sign1 = t1 > 0 ? "+" + t1 : t1;
-                        document.getElementById('f-day1').innerHTML = sign1 + " °C<br>" + day1.weather[0].description;
+                        document.getElementById('f-day1').innerHTML = sign1 + " °C<br>" + d1.weather[0].description;
                     }
-                    if (day2 && day2.weather && day2.weather[0]) {
-                        const t2 = Math.round(day2.main.temp);
+                    if (d2 && d2.weather && d2.weather[0]) {
+                        const t2 = Math.round(d2.main.temp);
                         const sign2 = t2 > 0 ? "+" + t2 : t2;
-                        document.getElementById('f-day2').innerHTML = sign2 + " °C<br>" + day2.weather[0].description;
+                        document.getElementById('f-day2').innerHTML = sign2 + " °C<br>" + d2.weather[0].description;
                     }
-                    if (day3 && day3.weather && day3.weather[0]) {
-                        const t3 = Math.round(day3.main.temp);
+                    if (d3 && d3.weather && d3.weather[0]) {
+                        const t3 = Math.round(d3.main.temp);
                         const sign3 = t3 > 0 ? "+" + t3 : t3;
-                        document.getElementById('f-day3').innerHTML = sign3 + " °C<br>" + day3.weather[0].description;
+                        document.getElementById('f-day3').innerHTML = sign3 + " °C<br>" + d3.weather[0].description;
                     }
                 }
             })
