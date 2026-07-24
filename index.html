@@ -109,29 +109,29 @@
     <div class="status" id="status-text">плата всегда в сети. Ожидание свежих данных от датчиков. если есть проблемы писать в тг @Aboba00626</div>
 
     <div class="grid-container">
-        <!-- ТВОИ ЦВЕТНЫЕ ПЛИТКИ -->
+        <!-- КАРТОЧКИ БЕЗ ТЕХНИЧЕСКИХ НАЗВАНИЙ -->
         <div class="card card-temp">
-            <div class="card-title">🔴 Температура (BME280)</div>
+            <div class="card-title">🔴 Температура</div>
             <div class="card-value" id="temp">-- °C</div>
         </div>
         
         <div class="card card-press">
-            <div class="card-title">🟠 Давление (BME280)</div>
+            <div class="card-title">🟠 Давление</div>
             <div class="card-value" id="pressure">-- мм рт.ст.</div>
         </div>
 
         <div class="card card-rain">
-            <div class="card-title">⚪ Датчик осадков (YL-83)</div>
+            <div class="card-title">⚪ Датчик осадков</div>
             <div class="card-value" id="rain" style="font-size: 20px; margin-top: 15px;">☀️ Сухо</div>
         </div>
 
         <div class="card card-hum">
-            <div class="card-title">🟡 Влажность (BME280)</div>
+            <div class="card-title">🟡 Влажность</div>
             <div class="card-value" id="humidity">-- %</div>
         </div>
 
         <div class="card card-air">
-            <div class="card-title">🟣 Воздух (MQ135)</div>
+            <div class="card-title">🟣 Воздух</div>
             <div class="card-value" id="air">--</div>
         </div>
 
@@ -164,7 +164,7 @@
     const macID = "68094753D1A8"; 
 
     function updateData() {
-        // Берем данные из HTML-кода открытого информера НародМона через надежный прокси AllOrigins
+        // Парсим информер НародМона через AllOrigins без CORS ошибок
         const url = 'https://allorigins.win' + encodeURIComponent('https://narodmon.ru' + macID);
         
         fetch(url)
@@ -172,7 +172,7 @@
             .then(wrapper => {
                 const html = wrapper.contents;
                 
-                // Ищем значения с помощью регулярных выражений прямо в кодовой разметке
+                // Вытаскиваем точные значения из разметки информера
                 const tempMatch = html.match(/([\d\.\+\-]+)\s*°C/);
                 const humMatch = html.match(/([\d\.\+\-]+)\s*%/);
                 const pressMatch = html.match(/([\d\.\+\-]+)\s*mmHg/);
@@ -184,6 +184,7 @@
                     document.getElementById('humidity').innerText = humMatch[1] + ' %';
                 }
                 if (pressMatch && pressMatch[1]) {
+                    // Конвертируем mmHg если нужно, или выводим как есть
                     document.getElementById('pressure').innerText = pressMatch[1] + ' мм рт.ст.';
                 }
                 
@@ -195,7 +196,6 @@
     }
 
     updateData();
-    // Обновление раз в 30 секунд
     setInterval(updateData, 30000);
 </script>
 </body>
