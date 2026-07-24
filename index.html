@@ -161,38 +161,39 @@
     const macID = "68094753D1A8"; 
 
     function updateData() {
-        const targetUrl = 'https://narodmon.ru' + macID + '.json';
-        const url = 'https://allorigins.win' + encodeURIComponent(targetUrl);
-        
-        fetch(url)
-            .then(res => res.json())
-            .then(wrapper => {
-                const data = JSON.parse(wrapper.contents);
-                if (data && data.sensors) {
-                    data.sensors.forEach(s => {
-                        // Переводим ID в текст и убираем лишние буквы для точного сравнения
-                        const sensorId = s.id ? s.id.toString().replace(/\D/g, '') : '';
-                        const name = s.name ? s.name.toLowerCase() : '';
-                        
-                        if (sensorId === '55029' || name.includes('темп') || name.includes('t ')) {
-                            document.getElementById('temp').innerText = s.value + ' °C';
-                        }
-                        if (sensorId === '55044' || name.includes('влаж') || name.includes('rh')) {
-                            document.getElementById('humidity').innerText = s.value + ' %';
-                        }
-                        if (sensorId === '55046' || name.includes('давл') || name.includes('press')) {
-                            document.getElementById('pressure').innerText = s.value + ' мм рт.ст.';
-                        }
-                    });
-                    document.getElementById('status-text').innerText = "плата всегда в сети. Живой поток данных подключен успешно.";
-                }
-            })
-            .catch(err => {
-                console.log("Ошибка шлюза:", err);
-            });
+        // Безопасный JSONP-запрос, который полностью обходит CORS защиту Хрома
+        const oldScript = document.getElementById('jsonp-script');
+        if (oldScript) oldScript.remove();
+
+        const script = document.createElement('script');
+        script.id = 'jsonp-script';
+        script.src = 'https://narodmon.ru' + macID + '.json?callback=parseWidgetData';
+        document.body.appendChild(script);
     }
 
+    // Функция обработки данных, вызываемая сервером NarodMon напрямую
+    window.parseWidgetData = function(data) {
+        if (data && data.sensors) {
+            data.sensors.forEach(s => {
+                const sensorId = s.id ? s.id.toString().replace(/\D/g, '') : '';
+                const name = s.name ? s.name.toLowerCase() : '';
+                
+                if (sensorId === '55029' || name.includes('темп') || name.includes('t ')) {
+                    document.getElementById('temp').innerText = s.value + ' °C';
+                }
+                if (sensorId === '55044' || name.includes('влаж') || name.includes('rh')) {
+                    document.getElementById('humidity').innerText = s.value + ' %';
+                }
+                if (sensorId === '55046' || name.includes('давл') || name.includes('press')) {
+                    document.getElementById('pressure').innerText = s.value + ' мм рт.ст.';
+                }
+            });
+            document.getElementById('status-text').innerText = "плата всегда в сети. Живой поток данных подключен успешно.";
+        }
+    };
+
     updateData();
+    // Опрашиваем шлюз раз в 30 секунд
     setInterval(updateData, 30000);
 </script>
 </body>
