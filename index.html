@@ -97,7 +97,7 @@
 
     <h1>📡 Метеостанция село Краснокумское</h1>
     <div style="color: #38bdf8; font-size: 16px; font-weight: bold; margin-bottom: 5px;">📍 ул. Лесная</div>
-    <div class="status" id="status-text">плата всегда в сети. Подключение к живому логу датчиков...</div>
+    <div class="status" id="status-text">плата всегда в сети. Загрузка бедрокового шлюза...</div>
 
     <div class="grid-container">
         <div class="card card-temp">
@@ -149,7 +149,6 @@
     const macID = "68094753D1A8"; 
 
     function updateData() {
-        // Читаем напрямую открытую dev-страницу, которую ты скинул на скриншоте
         const targetUrl = 'https://narodmon.ru' + macID;
         const url = 'https://allorigins.win' + encodeURIComponent(targetUrl);
         
@@ -157,38 +156,54 @@
             .then(res => res.json())
             .then(wrapper => {
                 const text = wrapper.contents;
-                
-                // Вытаскиваем значения по именам T1, H1, P1 из пакета платы
+                if (!text) return;
+
+                // Бедроковый разбор строк лога по индексам совпадений [1]
                 const tMatch = text.match(/#T1#([\d\.\-]+)/);
                 const hMatch = text.match(/#H1#([\d\.\-]+)/);
                 const pMatch = text.match(/#P1#([\d\.\-]+)/);
                 const rMatch = text.match(/#RAIN#([\d\.\-]+)/);
-                const aMatch = text.match(/#AIR Gaza#([\d\.\-]+)/) || text.match(/#AIR#([\d\.\-]+)/);
+                const aMatch = text.match(/#AIR#([\d\.\-]+)/);
                 const uMatch = text.match(/#UV#([\d\.\-]+)/);
 
-                if (tMatch) document.getElementById('temp').innerText = tMatch[1] + ' °C';
-                if (hMatch) document.getElementById('humidity').innerText = hMatch[1] + ' %';
-                
-                if (pMatch) {
-                    // Переводим бары в привычные мм рт.ст., так как плата шлет сырое давление
+                if (tMatch && tMatch[1]) {
+                    document.getElementById('temp').innerText = tMatch[1] + ' °C';
+                }
+                if (hMatch && hMatch[1]) {
+                    document.getElementById('humidity').innerText = hMatch[1] + ' %';
+                }
+                if (pMatch && pMatch[1]) {
                     let rawPress = parseFloat(pMatch[1]);
-                    if (rawPress < 1000) { 
-                        document.getElementById('pressure').innerText = "759 мм рт.ст.";
+                    // Если плата шлет готовые 759, выводим их, если сырые паскали — переводим
+                    if (rawPress < 1000) {
+                        document.getElementById('pressure').innerText = rawPress + ' мм рт.ст.';
                     } else {
                         document.getElementById('pressure').innerText = Math.round(rawPress * 0.750063) + ' мм рт.ст.';
                     }
                 }
 
-                if (rMatch) {
+                if (rMatch && rMatch[1]) {
                     document.getElementById('rain').innerText = parseFloat(rMatch[1]) < 3000 ? "🌧️ Идет дождь!" : "☀️ Сухо";
+                } else {
+                    document.getElementById('rain').innerText = "☀️ Сухо";
                 }
-                if (aMatch) document.getElementById('air').innerText = aMatch[1];
-                if (uMatch) document.getElementById('uv').innerText = uMatch[1];
+                
+                if (aMatch && aMatch[1]) {
+                    document.getElementById('air').innerText = aMatch[1];
+                } else {
+                    document.getElementById('air').innerText = "--";
+                }
 
-                document.getElementById('status-text').innerText = "плата всегда в сети. Живой поток dev-данных успешно подключен.";
+                if (uMatch && uMatch[1]) {
+                    document.getElementById('uv').innerText = uMatch[1];
+                } else {
+                    document.getElementById('uv').innerText = "--";
+                }
+
+                document.getElementById('status-text').innerText = "плата всегда в сети. Бедроковый поток данных активен.";
             })
             .catch(err => {
-                console.log("Ошибка чтения лога:", err);
+                console.log("Ошибка лога:", err);
             });
     }
 
