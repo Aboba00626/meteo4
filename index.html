@@ -149,7 +149,7 @@
         </div>
         <div class="card card-forecast">
             <div class="forecast-day">Послезавтра</div>
-            <div id="f-day2">+29 °C<br>☀️ Maлооблачно</div>
+            <div id="f-day2">+29 °C<br>☀️ Малооблачно</div>
         </div>
         <div class="card card-forecast">
             <div class="forecast-day">3-й день</div>
@@ -161,7 +161,7 @@
     const macID = "68094753D1A8"; 
     const appKey = "WGEwfVznFQkUM";
 
-        function updateData() {
+    function updateData() {
         const url = 'https://allorigins.win' + encodeURIComponent('https://narodmon.ru' + macID + '&api_key=' + appKey);
         
         fetch(url)
@@ -169,10 +169,9 @@
             .then(wrapper => {
                 const data = JSON.parse(wrapper.contents);
                 
-                // Проверяем, что сервер вообще прислал массив устройств
                 if (data && data.devices && data.devices[0] && data.devices[0].sensors) {
                     data.devices[0].sensors.forEach(s => {
-                        const code = s.id.toString(); // Переводим ID в текст для точной проверки
+                        const code = s.id.toString();
                         
                         if (code === '55029') {
                             document.getElementById('temp').innerText = s.value + ' °C';
@@ -183,26 +182,30 @@
                         if (code === '55046') {
                             document.getElementById('pressure').innerText = s.value + ' мм рт.ст.';
                         }
-                        if (code === 'UV') {
+                        if (code === 'UV' || code === 'uv') {
                             document.getElementById('uv').innerText = s.value;
                         }
-                        if (code === 'AIR') {
+                        if (code === 'AIR' || code === 'air') {
                             document.getElementById('air').innerText = s.value;
                         }
-                        if (code === 'RAIN') {
+                        if (code === 'RAIN' || code === 'rain') {
                             document.getElementById('rain').innerText = s.value < 3000 ? "🌧️ Идет дождь!" : "☀️ Сухо";
                         }
                     });
+                    document.getElementById('status-text').innerText = "плата всегда в сети. Данные успешно получены с НародМона.";
                 } else {
-                    // Если НародМон прислал ошибку ключа или пустой ответ — выводим её на экран!
                     if (data && data.error) {
-                        document.getElementById('status-text').innerText = "Ошибка API НародМона: " + data.error;
-                    } else {
-                        document.getElementById('status-text').innerText = "Сервер вернул пустой массив приборов. Проверь ID устройства.";
+                        document.getElementById('status-text').innerText = "Ответ НародМона: " + data.error;
                     }
                 }
             })
             .catch(err => {
-                document.getElementById('status-text').innerText = "Ошибка прокси: " + err.message;
+                document.getElementById('status-text').innerText = "Ошибка загрузки: " + err.message;
             });
     }
+
+    updateData();
+    setInterval(updateData, 30000);
+</script>
+</body>
+</html>
