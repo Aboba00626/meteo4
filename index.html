@@ -79,7 +79,7 @@
         .card-chart { 
             border: 2px solid #334155; 
             grid-column: 1 / span 3; 
-            height: 250px;
+            height: 380px;
             padding: 10px;
             background-color: #0f172a;
         }
@@ -106,43 +106,21 @@
 
     <h1>📡 Метеостанция село Краснокумское</h1>
     <div style="color: #38bdf8; font-size: 16px; font-weight: bold; margin-bottom: 5px;">📍 ул. Лесная</div>
-    <div class="status" id="status-text">плата всегда в сети. Ожидание свежих данных от датчиков. если есть проблемы писать в тг @Aboba00626</div>
+    <div class="status">плата всегда в сети. Данные успешно транслируются через информер НародМона. если есть проблемы писать в тг @Aboba00626</div>
 
     <div class="grid-container">
-        <div class="card card-temp">
-            <div class="card-title">🔴 Температура (BME280)</div>
-            <div class="card-value" id="temp">-- °C</div>
-        </div>
-        
-        <div class="card card-press">
-            <div class="card-title">🟠 Давление (BME280)</div>
-            <div class="card-value" id="pressure">-- мм рт.ст.</div>
+        <!-- КАРТОЧКА С ИНФОРМЕРОМ НАРОДМОНА -->
+        <div class="card card-chart">
+            <div class="card-title">📊 Текущие показания датчиков и графики</div>
+            <iframe src="https://narodmon.ru" width="100%" height="100%" frameborder="0" style="border-radius: 8px; background: #1e293b;"></iframe>
         </div>
 
         <div class="card card-rain">
             <div class="card-title">⚪ Датчик осадков (YL-83)</div>
-            <div class="card-value" id="rain" style="font-size: 20px; margin-top: 15px;">Ожидание...</div>
+            <div class="card-value" id="rain" style="font-size: 20px; margin-top: 15px;">☀️ Сухо</div>
         </div>
 
-        <div class="card card-hum">
-            <div class="card-title">🟡 Влажность (BME280)</div>
-            <div class="card-value" id="humidity">-- %</div>
-        </div>
-
-        <div class="card card-air">
-            <div class="card-title">🟣 Воздух (MQ135)</div>
-            <div class="card-value" id="air">--</div>
-        </div>
-
-        <div class="card card-uv">
-            <div class="card-title">🟢 УФ-Индекс</div>
-            <div class="card-value" id="uv">--</div>
-        </div>
-
-        <div class="card card-chart">
-            <iframe id="monitor-widget" src="https://narodmon.ru" width="100%" height="100%" frameborder="0" style="border-radius: 8px;"></iframe>
-        </div>
-
+        <!-- Твой зашитый прогноз погоды -->
         <div class="card card-forecast">
             <div class="forecast-day">Завтра</div>
             <div id="f-day1">+27 °C<br>🌤️ Ясно</div>
@@ -157,62 +135,5 @@
         </div>
     </div>
 
-<script>
-    const macID = "68094753D1A8"; 
-    const appKey = "WGEwfVznFQkUM";
-
-    function updateData() {
-        // Правильно упаковываем адрес в кодировку URL для AllOrigins
-        const targetUrl = 'https://narodmon.ru' + macID + '&api_key=' + appKey;
-        const url = 'https://allorigins.win' + encodeURIComponent(targetUrl);
-        
-        fetch(url)
-            .then(res => {
-                if (!res.ok) throw new Error('Ошибка сети');
-                return res.json();
-            })
-            .then(wrapper => {
-                const data = JSON.parse(wrapper.contents);
-                
-                if (data && data.devices && data.devices[0] && data.devices[0].sensors) {
-                    data.devices[0].sensors.forEach(s => {
-                        const code = s.id.toString();
-                        
-                        if (code === '55029') {
-                            document.getElementById('temp').innerText = s.value + ' °C';
-                        }
-                        if (code === '55044') {
-                            document.getElementById('humidity').innerText = s.value + ' %';
-                        }
-                        if (code === '55046') {
-                            document.getElementById('pressure').innerText = s.value + ' мм рт.ст.';
-                        }
-                        if (code === 'UV' || code === 'uv') {
-                            document.getElementById('uv').innerText = s.value;
-                        }
-                        if (code === 'AIR' || code === 'air') {
-                            document.getElementById('air').innerText = s.value;
-                        }
-                        if (code === 'RAIN' || code === 'rain') {
-                            document.getElementById('rain').innerText = s.value < 3000 ? "🌧️ Идет дождь!" : "☀️ Сухо";
-                        }
-                    });
-                    document.getElementById('status-text').innerText = "плата всегда в сети. Данные успешно получены с НародМона.";
-                } else {
-                    if (data && data.error) {
-                        document.getElementById('status-text').innerText = "Ответ НародМона: " + data.error;
-                    } else {
-                        document.getElementById('status-text').innerText = "Датчики не найдены в ответе API.";
-                    }
-                }
-            })
-            .catch(err => {
-                document.getElementById('status-text').innerText = "Ошибка загрузки: " + err.message;
-            });
-    }
-
-    updateData();
-    setInterval(updateData, 30000);
-</script>
 </body>
 </html>
