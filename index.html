@@ -162,7 +162,7 @@
     const appKey = "WGEwfVznFQkUM";
 
     function updateData() {
-        const url = 'https://allorigins.win' + encodeURIComponent('https://narodmon.ru' + macID + '&api_key=' + appKey);
+        const url = 'https://narodmon.ru' + macID + '&api_key=' + appKey;
         
         fetch(url)
             .then(res => res.json())
