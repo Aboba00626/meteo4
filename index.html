@@ -97,18 +97,17 @@
 
     <h1>📡 Метеостанция село Краснокумское</h1>
     <div style="color: #38bdf8; font-size: 16px; font-weight: bold; margin-bottom: 5px;">📍 ул. Лесная</div>
-    <div class="status" id="status-text">плата всегда в сети. Данные успешно обновлены. если есть проблемы писать в тг @Aboba00626</div>
+    <div class="status" id="status-text">плата всегда в сети. Ожидание свежих данных от датчиков. если есть проблемы писать в тг @Aboba00626</div>
 
     <div class="grid-container">
-        <!-- ТВОИ ЦВЕТНЫЕ КАРТОЧКИ -->
         <div class="card card-temp">
             <div class="card-title">🔴 Температура</div>
-            <div class="card-value" id="temp">27.1 °C</div>
+            <div class="card-value" id="temp">-- °C</div>
         </div>
         
         <div class="card card-press">
             <div class="card-title">🟠 Давление</div>
-            <div class="card-value" id="pressure">733 мм рт.ст.</div>
+            <div class="card-value" id="pressure">-- мм рт.ст.</div>
         </div>
 
         <div class="card card-rain">
@@ -118,17 +117,17 @@
 
         <div class="card card-hum">
             <div class="card-title">🟡 Влажность</div>
-            <div class="card-value" id="humidity">65 %</div>
+            <div class="card-value" id="humidity">-- %</div>
         </div>
 
         <div class="card card-air">
             <div class="card-title">🟣 Воздух</div>
-            <div class="card-value" id="air">Чистый</div>
+            <div class="card-value" id="air">--</div>
         </div>
 
         <div class="card card-uv">
             <div class="card-title">🟢 УФ-Индекс</div>
-            <div class="card-value" id="uv">0 (Ночь)</div>
+            <div class="card-value" id="uv">--</div>
         </div>
 
         <!-- Твой зашитый прогноз погоды -->
@@ -146,5 +145,45 @@
         </div>
     </div>
 
+<script>
+    const macID = "68094753D1A8"; 
+
+    function updateData() {
+        // Создаем легальный JSONP запрос, обходящий CORS блокировки браузера
+        const oldScript = document.getElementById('jsonp-script');
+        if (oldScript) oldScript.remove();
+
+        const script = document.createElement('script');
+        script.id = 'jsonp-script';
+        script.src = 'https://narodmon.ru' + macID + '.json?callback=parseWidgetData&lang=ru';
+        document.body.appendChild(script);
+    }
+
+    // Эта функция сама примет и разложит точные цифры из твоего личного кабинета
+    window.parseWidgetData = function(data) {
+        if (data && data.sensors) {
+            data.sensors.forEach(s => {
+                const name = s.name ? s.name.toLowerCase() : '';
+                const sensorId = s.id ? s.id.toString() : '';
+                
+                // Проверяем по названию датчика в твоей админке или по цифрам ID
+                if (name.includes('t воздуха') || name.includes('темп') || sensorId.includes('55029')) {
+                    document.getElementById('temp').innerText = s.value + ' °C';
+                }
+                if (name.includes('rh влажность') || name.includes('влаж') || sensorId.includes('55044')) {
+                    document.getElementById('humidity').innerText = s.value + ' %';
+                }
+                if (name.includes('атм. давление') || name.includes('давл') || sensorId.includes('55046')) {
+                    document.getElementById('pressure').innerText = s.value + ' мм рт.ст.';
+                }
+            });
+            document.getElementById('status-text').innerText = "плата всегда в сети. Живой поток данных подключен успешно.";
+        }
+    };
+
+    updateData();
+    // Обновляем показания на экране каждые 30 секунд
+    setInterval(updateData, 30000);
+</script>
 </body>
 </html>
