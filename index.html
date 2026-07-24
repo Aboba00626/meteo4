@@ -162,10 +162,15 @@
     const appKey = "WGEwfVznFQkUM";
 
     function updateData() {
-       const url = 'https://herokuapp.com' + macID + '&api_key=' + appKey;
-    
+        // Правильно упаковываем адрес в кодировку URL для AllOrigins
+        const targetUrl = 'https://narodmon.ru' + macID + '&api_key=' + appKey;
+        const url = 'https://allorigins.win' + encodeURIComponent(targetUrl);
+        
         fetch(url)
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) throw new Error('Ошибка сети');
+                return res.json();
+            })
             .then(wrapper => {
                 const data = JSON.parse(wrapper.contents);
                 
@@ -196,6 +201,8 @@
                 } else {
                     if (data && data.error) {
                         document.getElementById('status-text').innerText = "Ответ НародМона: " + data.error;
+                    } else {
+                        document.getElementById('status-text').innerText = "Датчики не найдены в ответе API.";
                     }
                 }
             })
