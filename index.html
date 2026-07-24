@@ -161,7 +161,6 @@
     const macID = "68094753D1A8"; 
 
     function updateData() {
-        // AllOrigins проксирует запрос к официальному JSON-виджету НародМона
         const targetUrl = 'https://narodmon.ru' + macID + '.json';
         const url = 'https://allorigins.win' + encodeURIComponent(targetUrl);
         
@@ -171,20 +170,21 @@
                 const data = JSON.parse(wrapper.contents);
                 if (data && data.sensors) {
                     data.sensors.forEach(s => {
-                        // Проверяем датчики по ID (55029, 55044, 55046) или по их названию из твоей админки
-                        const name = s.name ? s.name.toLowerCase() : "";
+                        // Переводим ID в текст и убираем лишние буквы для точного сравнения
+                        const sensorId = s.id ? s.id.toString().replace(/\D/g, '') : '';
+                        const name = s.name ? s.name.toLowerCase() : '';
                         
-                        if (s.id == 55029 || name.includes('темп') || name.includes('t ')) {
+                        if (sensorId === '55029' || name.includes('темп') || name.includes('t ')) {
                             document.getElementById('temp').innerText = s.value + ' °C';
                         }
-                        if (s.id == 55044 || name.includes('влаж') || name.includes('rh')) {
+                        if (sensorId === '55044' || name.includes('влаж') || name.includes('rh')) {
                             document.getElementById('humidity').innerText = s.value + ' %';
                         }
-                        if (s.id == 55046 || name.includes('давл') || name.includes('press')) {
+                        if (sensorId === '55046' || name.includes('давл') || name.includes('press')) {
                             document.getElementById('pressure').innerText = s.value + ' мм рт.ст.';
                         }
                     });
-                    document.getElementById('status-text').innerText = "плата всегда в сети. Живой поток данных успешно подключен.";
+                    document.getElementById('status-text').innerText = "плата всегда в сети. Живой поток данных подключен успешно.";
                 }
             })
             .catch(err => {
