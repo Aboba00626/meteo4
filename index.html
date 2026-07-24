@@ -109,7 +109,6 @@
     <div class="status" id="status-text">плата всегда в сети. Ожидание свежих данных от датчиков. если есть проблемы писать в тг @Aboba00626</div>
 
     <div class="grid-container">
-        <!-- КАРТОЧКИ БЕЗ ТЕХНИЧЕСКИХ НАЗВАНИЙ -->
         <div class="card card-temp">
             <div class="card-title">🔴 Температура</div>
             <div class="card-value" id="temp">-- °C</div>
@@ -140,12 +139,10 @@
             <div class="card-value" id="uv">--</div>
         </div>
 
-        <!-- КАРТА С ГРАФИКАМИ -->
         <div class="card card-chart">
             <iframe src="https://narodmon.ru" width="100%" height="100%" frameborder="0" style="border-radius: 8px;"></iframe>
         </div>
 
-        <!-- Твой прогноз погоды -->
         <div class="card card-forecast">
             <div class="forecast-day">Завтра</div>
             <div id="f-day1">+27 °C<br>🌤️ Ясно</div>
@@ -164,34 +161,34 @@
     const macID = "68094753D1A8"; 
 
     function updateData() {
-        // Парсим информер НародМона через AllOrigins без CORS ошибок
-        const url = 'https://allorigins.win' + encodeURIComponent('https://narodmon.ru' + macID);
+        // AllOrigins проксирует запрос к официальному JSON-виджету НародМона
+        const targetUrl = 'https://narodmon.ru' + macID + '.json';
+        const url = 'https://allorigins.win' + encodeURIComponent(targetUrl);
         
         fetch(url)
             .then(res => res.json())
             .then(wrapper => {
-                const html = wrapper.contents;
-                
-                // Вытаскиваем точные значения из разметки информера
-                const tempMatch = html.match(/([\d\.\+\-]+)\s*°C/);
-                const humMatch = html.match(/([\d\.\+\-]+)\s*%/);
-                const pressMatch = html.match(/([\d\.\+\-]+)\s*mmHg/);
-
-                if (tempMatch && tempMatch[1]) {
-                    document.getElementById('temp').innerText = tempMatch[1] + ' °C';
+                const data = JSON.parse(wrapper.contents);
+                if (data && data.sensors) {
+                    data.sensors.forEach(s => {
+                        // Проверяем датчики по ID (55029, 55044, 55046) или по их названию из твоей админки
+                        const name = s.name ? s.name.toLowerCase() : "";
+                        
+                        if (s.id == 55029 || name.includes('темп') || name.includes('t ')) {
+                            document.getElementById('temp').innerText = s.value + ' °C';
+                        }
+                        if (s.id == 55044 || name.includes('влаж') || name.includes('rh')) {
+                            document.getElementById('humidity').innerText = s.value + ' %';
+                        }
+                        if (s.id == 55046 || name.includes('давл') || name.includes('press')) {
+                            document.getElementById('pressure').innerText = s.value + ' мм рт.ст.';
+                        }
+                    });
+                    document.getElementById('status-text').innerText = "плата всегда в сети. Живой поток данных успешно подключен.";
                 }
-                if (humMatch && humMatch[1]) {
-                    document.getElementById('humidity').innerText = humMatch[1] + ' %';
-                }
-                if (pressMatch && pressMatch[1]) {
-                    // Конвертируем mmHg если нужно, или выводим как есть
-                    document.getElementById('pressure').innerText = pressMatch[1] + ' мм рт.ст.';
-                }
-                
-                document.getElementById('status-text').innerText = "плата всегда в сети. Живой поток данных подключен успешно.";
             })
             .catch(err => {
-                console.log("Ошибка обновления:", err);
+                console.log("Ошибка шлюза:", err);
             });
     }
 
