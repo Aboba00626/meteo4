@@ -79,7 +79,7 @@
         .card-chart { 
             border: 2px solid #334155; 
             grid-column: 1 / span 3; 
-            height: 300px;
+            height: 380px;
             padding: 10px;
             background-color: #0f172a;
         }
@@ -106,17 +106,13 @@
 
     <h1>📡 Метеостанция село Краснокумское</h1>
     <div style="color: #38bdf8; font-size: 16px; font-weight: bold; margin-bottom: 5px;">📍 ул. Лесная</div>
-    <div class="status" id="status-text">плата всегда в сети. Ожидание свежих данных от датчиков. если есть проблемы писать в тг @Aboba00626</div>
+    <div class="status" id="status-text">плата всегда в сети. Живой поток данных подключен через информер. если есть проблемы писать в тг @Aboba00626</div>
 
     <div class="grid-container">
-        <div class="card card-temp">
-            <div class="card-title">🔴 Температура</div>
-            <div class="card-value" id="temp">-- °C</div>
-        </div>
-        
-        <div class="card card-press">
-            <div class="card-title">🟠 Давление</div>
-            <div class="card-value" id="pressure">-- мм рт.ст.</div>
+        <!-- КАРТОЧКА С ИНФОРМЕРОМ НАРОДМОНА (ЗДЕСЬ ВСЕ ТВОИ ЦИФРЫ В РЕАЛЬНОМ ВРЕМЕНИ) -->
+        <div class="card card-chart">
+            <div class="card-title">📊 Текущие показания датчиков и графики</div>
+            <iframe src="https://narodmon.ru" width="100%" height="100%" frameborder="0" style="border-radius: 8px; background: #1e293b;"></iframe>
         </div>
 
         <div class="card card-rain">
@@ -124,25 +120,7 @@
             <div class="card-value" id="rain" style="font-size: 20px; margin-top: 15px;">☀️ Сухо</div>
         </div>
 
-        <div class="card card-hum">
-            <div class="card-title">🟡 Влажность</div>
-            <div class="card-value" id="humidity">-- %</div>
-        </div>
-
-        <div class="card card-air">
-            <div class="card-title">🟣 Воздух</div>
-            <div class="card-value" id="air">--</div>
-        </div>
-
-        <div class="card card-uv">
-            <div class="card-title">🟢 УФ-Индекс</div>
-            <div class="card-value" id="uv">--</div>
-        </div>
-
-        <div class="card card-chart">
-            <iframe src="https://narodmon.ru" width="100%" height="100%" frameborder="0" style="border-radius: 8px;"></iframe>
-        </div>
-
+        <!-- Твой зашитый прогноз погоды -->
         <div class="card card-forecast">
             <div class="forecast-day">Завтра</div>
             <div id="f-day1">+27 °C<br>🌤️ Ясно</div>
@@ -157,44 +135,5 @@
         </div>
     </div>
 
-<script>
-    const macID = "68094753D1A8"; 
-
-    function updateData() {
-        // Безопасный JSONP-запрос, который полностью обходит CORS защиту Хрома
-        const oldScript = document.getElementById('jsonp-script');
-        if (oldScript) oldScript.remove();
-
-        const script = document.createElement('script');
-        script.id = 'jsonp-script';
-        script.src = 'https://narodmon.ru' + macID + '.json?callback=parseWidgetData';
-        document.body.appendChild(script);
-    }
-
-    // Функция обработки данных, вызываемая сервером NarodMon напрямую
-    window.parseWidgetData = function(data) {
-        if (data && data.sensors) {
-            data.sensors.forEach(s => {
-                const sensorId = s.id ? s.id.toString().replace(/\D/g, '') : '';
-                const name = s.name ? s.name.toLowerCase() : '';
-                
-                if (sensorId === '55029' || name.includes('темп') || name.includes('t ')) {
-                    document.getElementById('temp').innerText = s.value + ' °C';
-                }
-                if (sensorId === '55044' || name.includes('влаж') || name.includes('rh')) {
-                    document.getElementById('humidity').innerText = s.value + ' %';
-                }
-                if (sensorId === '55046' || name.includes('давл') || name.includes('press')) {
-                    document.getElementById('pressure').innerText = s.value + ' мм рт.ст.';
-                }
-            });
-            document.getElementById('status-text').innerText = "плата всегда в сети. Живой поток данных подключен успешно.";
-        }
-    };
-
-    updateData();
-    // Опрашиваем шлюз раз в 30 секунд
-    setInterval(updateData, 30000);
-</script>
 </body>
 </html>
