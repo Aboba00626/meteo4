@@ -161,22 +161,30 @@
     const macID = "68094753D1A8"; 
 
     function updateData() {
-        const url = 'https://allorigins.win' + encodeURIComponent('https://narodmon.ru' + macID + '/data.json');
+        // Запрос публичной страницы устройства, откуда регулярным выражением вытащим данные, обходя приватность API
+        const url = 'https://allorigins.win' + encodeURIComponent('https://narodmon.ru' + macID);
         
         fetch(url)
             .then(res => res.json())
             .then(wrapper => {
-                const data = JSON.parse(wrapper.contents);
-                if (data && data.sensors) {
-                    data.sensors.forEach(s => {
-                        const code = s.id.toUpperCase();
-                        if (code === 'T1') document.getElementById('temp').innerText = s.value + ' °C';
-                        if (code === 'H1') document.getElementById('humidity').innerText = s.value + ' %';
-                        if (code === 'P1') document.getElementById('pressure').innerText = s.value + ' мм рт.ст.';
-                        if (code === 'UV') document.getElementById('uv').innerText = s.value;
-                        if (code === 'AIR') document.getElementById('air').innerText = s.value;
-                        if (code === 'RAIN') document.getElementById('rain').innerText = s.value < 3000 ? "🌧️ Идет дождь!" : "☀️ Сухо";
-                    });
+                const html = wrapper.contents;
+                
+                // Ищем значения датчиков в коде страницы НародМона
+                const tempMatch = html.match(/S55029.*?title="([^"]+)"/i) || html.match(/S55029[^>]*>([\d\.\+\-]+)/i);
+                const humMatch = html.match(/S55044.*?title="([^"]+)"/i) || html.match(/S55044[^>]*>([\d\.\+\-]+)/i);
+                const pressMatch = html.match(/S55046.*?title="([^"]+)"/i) || html.match(/S55046[^>]*>([\d\.\+\-]+)/i);
+
+                if (tempMatch) {
+                    let val = tempMatch[1].replace(/[^\d\.\+\-]/g, '');
+                    if(val) document.getElementById('temp').innerText = val + ' °C';
+                }
+                if (humMatch) {
+                    let val = humMatch[1].replace(/[^\d\.\+\-]/g, '');
+                    if(val) document.getElementById('humidity').innerText = val + ' %';
+                }
+                if (pressMatch) {
+                    let val = pressMatch[1].replace(/[^\d\.\+\-]/g, '');
+                    if(val) document.getElementById('pressure').innerText = val + ' мм рт.ст.';
                 }
             })
             .catch(err => console.log(err));
